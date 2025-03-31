@@ -18,8 +18,10 @@ def options():
     2. Find songs by genre
     3. Find songs by feature
     4. Load new songs
-    5. Exit''')
-    return helper.get_choice([1,2,3,4,5])
+    5. Update a song
+    6. Remove a song
+    7. Exit''')
+    return helper.get_choice([1,2,3,4,5,6,7])
 
 #load new songs from filepath 
 def load_new_songs():
@@ -127,6 +129,76 @@ def search_by_feature():
     results = db_ops.single_attribute_params(query, dictionary)
     helper.pretty_print(results)
 
+# Update song information
+def update_song():
+
+    # get name of song to update
+    song_name = input("Enter the name of the song you want to update: ").strip()
+
+    # retrieve all the song details and store them in song details, a list of tuples.
+    query = '''SELECT * FROM songs WHERE Name = ?'''
+    song_details = db_ops.select_query_params(query, (song_name,))
+
+    # check if theres anything in the list
+    if len(song_details) == 0:
+        print("No song found with that name.")
+        return
+
+    # take the first matching song record (hope songs r unique)
+    # the first element is songID
+    song = song_details[0]
+    songID = song[0]
+
+    # print from song_details
+    print("Song details:")
+    print(f"Song ID: {songID}")
+    print(f"Name: {song[1]}")
+    print(f"Artist: {song[2]}")
+    print(f"Album: {song[3]}")
+    print(f"Release Date: {song[4]}")
+    print(f"Explicit: {song[6]}")
+
+    # map the choices which are allowed to be modified 
+    attributes = {
+        1: "Name",
+        2: "Artist",
+        3: "Album",
+        4: "releaseDate",
+        5: "Explicit"
+    }
+
+    # choose what to update
+    print("Which attribute would you like to update?")
+    print("1. Name\n2. Artist\n3. Album\n4. Release Date\n5. Explicit")
+    choice = helper.get_choice(attributes.keys()) # pass in 1-5
+
+
+    # update the song
+    db_ops.update_song_attribute(songID, attributes[choice])
+    print("Song information has been updated successfully.")
+
+def remove_song():
+    # get name of song to update
+    song_name = input("Enter the name of the song you want to remove: ").strip()
+
+    # retrieve all the song details and store them in song details, a list of tuples.
+    query = "SELECT * FROM songs WHERE Name = ?"
+    song_details = db_ops.select_query_params(query, (song_name,))
+
+    # check if theres anything in the list
+    if len(song_details) == 0:
+        print("No song found with that name.")
+        return
+
+    # take the first matching song record (hope songs r unique)
+    # the first element is songID
+    song = song_details[0]
+    songID = song[0]
+
+    # remove the song
+    db_ops.remove_song(songID)
+
+
 #main method
 startScreen()
 
@@ -142,6 +214,10 @@ while True:
     if user_choice == 4:
         load_new_songs()
     if user_choice == 5:
+        update_song()
+    if user_choice == 6:
+        remove_song()
+    if user_choice == 7:
         print("Goodbye!")
         break
 

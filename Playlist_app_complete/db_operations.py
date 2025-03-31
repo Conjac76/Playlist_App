@@ -127,9 +127,57 @@ class db_operations():
         data = helper.data_cleaner(filepath)
         attribute_count = len(data[0])
         placeholders = ("?,"*attribute_count)[:-1]
-        query = "INSERT INTO songs VALUES("+placeholders+")"
+        # using INSERT OR IGNORE in order to skip any insert that violates the
+        # unique contraint
+        # https://www.geeksforgeeks.org/sql-insert-ignore-statement/
+        query = "INSERT OR IGNORE INTO songs VALUES("+placeholders+")"
         self.bulk_insert(query, data)
-    
+
+    # function to update specific song attribute
+    def update_song_attribute(self, songID, attribute):
+
+        # inifite loop that way it goes until we get a valid input
+        while True:
+
+            #input new value to update old attribute
+            new_value = input(f"Enter the new value for {attribute}: ").strip()
+            
+            # validate to make sure not null
+            if attribute in ["Name", "Artist", "Album"]:
+                if new_value == "":
+                    print("Invalid input")
+                    continue
+
+            # validate to make sure true/false
+            elif attribute == "Explicit":
+                if new_value.lower() not in ["true", "false"]:
+                    print("Invalid input")
+                    continue
+
+            # validate its a modifiable attribute
+            else:
+                print("Invalid attribute specified.")
+                continue
+
+            try:
+                query = f"UPDATE songs SET {attribute} = ? WHERE songID = ?"
+                self.cursor.execute(query, (new_value, songID))
+                self.connection.commit()
+                print(f"{attribute} updated successfully.")
+                break  # exit after success
+            except Exception as e:
+                print(f"Error updating song: {e}")
+
+    # function to remove songs from db given songID
+    def remove_song(self, songID):
+        try:
+            query = "DELETE FROM songs WHERE songID = ?"
+            self.cursor.execute(query, (songID,))
+            self.connection.commit()
+            print("Song removed successfully.")
+        except Exception as e:
+            print(f"Error removing song: {e}")
+
 
     # destructor that closes connection with DB
     def destructor(self):
